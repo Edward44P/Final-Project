@@ -1,0 +1,15 @@
+
+.Rhistory
+.RData
+.Rapp.history
+.Ruserdata
+.Rproj.user/
+
+*.Rproj
+
+.DS_Store
+Thumbs.db
+
+.Rcache/
+cache/
+tmp/
