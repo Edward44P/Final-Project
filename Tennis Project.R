@@ -3,11 +3,11 @@
 
 # Install required packages.
 install.packages("dplyr")
-
+install.packages("corrplot")
 
 # Load required packages.
 library(dplyr)
-
+library(corrplot)
 
 # Read the four years of match data.
 matches_2016 <- read.csv("atp_matches_2016.csv", stringsAsFactors = FALSE)
@@ -105,5 +105,17 @@ boxplot(matches_filtered[, c("winner_ht", "winner_age", "loser_ht",
         col = c("lightblue", "lightgreen", "lightpink"),
         border = "darkblue", 
         ylab = "Values")
+
+# Produce a heatmap of variables' correlation.
+cor_matrix <- cor(matches_filtered[, 
+    c("winner_ht", "winner_age", "minutes", "w_ace", 
+    "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", 
+    "w_SvGms", "w_bpSaved", "w_bpFaced", "winner_rank")],
+                  method = "spearman")
+corrplot(cor_matrix, method =
+           "color", type = "upper", tl.cex =
+           0.8, number.cex = 0.7)
+
+
 
 
