@@ -96,7 +96,7 @@ head(matches_filtered)
 # EDA #########################################################################
 ###############################################################################
 
-# Visualise the outliers (boxplots).
+# Produce box plots of all numerical features.
 boxplot(matches_filtered[, c("winner_ht", "winner_age", "loser_ht", 
 "loser_age", "minutes", "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", 
 "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", 
@@ -105,6 +105,5 @@ boxplot(matches_filtered[, c("winner_ht", "winner_age", "loser_ht",
         col = c("lightblue", "lightgreen", "lightpink"),
         border = "darkblue", 
         ylab = "Values")
-
 
 
