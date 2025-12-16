@@ -91,3 +91,20 @@ matches_filtered$tourney_level <- recode(matches_filtered$tourney_level,
 
 # Check new formatting.
 head(matches_filtered)
+
+
+# EDA #########################################################################
+###############################################################################
+
+# Visualise the outliers (boxplots).
+boxplot(matches_filtered[, c("winner_ht", "winner_age", "loser_ht", 
+"loser_age", "minutes", "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", 
+"w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", 
+"l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced")],
+        main = "Boxplot of Tennis Stats", 
+        col = c("lightblue", "lightgreen", "lightpink"),
+        border = "darkblue", 
+        ylab = "Values")
+
+
+
