@@ -4,10 +4,14 @@
 # Install required packages.
 install.packages("dplyr")
 install.packages("corrplot")
+install.packages("ggplot2")
+install.packages("patchwork")
 
 # Load required packages.
 library(dplyr)
 library(corrplot)
+library(ggplot2)
+library(patchwork)
 
 # Read the four years of match data.
 matches_2016 <- read.csv("atp_matches_2016.csv", stringsAsFactors = FALSE)
@@ -116,6 +120,20 @@ corrplot(cor_matrix, method =
            "color", type = "upper", tl.cex =
            0.8, number.cex = 0.7)
 
+# Produce histograms of select numerical features.
+selected_cols <- c("l_ace", "l_df", "l_svpt", "l_1stIn", 
+"l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced")
+plots <- lapply(selected_cols,
+                function(col) {
+    ggplot(matches_filtered,
+           aes(x = .data[[col]])) +
+      geom_histogram(bins = 20,
+                     fill = "darkblue", color = 
+                       "black") +
+      labs(title = paste(col, "Histogram"), x = col, y = "Count") +
+      theme_minimal(base_size = 10)
+})
 
-
+# Plot the nine histograms in a 3x3 grid.
+wrap_plots(plots, ncol = 3)
 
