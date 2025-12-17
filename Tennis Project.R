@@ -147,7 +147,7 @@ wrap_plots(plots, ncol = 3)
 ###########################################################################
 
 
-# Create two new columns titled w_1stperwon and l_1stperwon for both datasets.
+# Create new columns 'w_1stperwon' and 'l_1stperwon' for both datasets.
 matches <- matches %>%
   mutate(w_1stperwon = (w_1stWon / w_1stIn) * 100)
 matches <- matches %>%
@@ -160,5 +160,42 @@ matches_filtered <- matches_filtered %>%
 head(matches_filtered)
 
 
+# Restructure dataset for classification modelling.
+# Create winner rows.
+winners <- matches_filtered %>%
+  select(surface, tourney_level, minutes, best_of, round,
+         player_ht = winner_ht, player_age = winner_age,
+         player_hand = winner_hand,
+         player_rank = winner_rank, player_rank_points = winner_rank_points,
+         player_1stperwon = w_1stperwon, player_ace = w_ace, player_df = w_df,
+         player_2ndwon = w_2ndWon, player_SvGms = w_SvGms,
+         player_bpSaved = w_bpSaved, player_bpFaced = w_bpFaced,
+         opp_ht = loser_ht, opp_age = loser_age, opp_hand = loser_hand,
+         opp_rank = loser_rank, opp_rank_points = loser_rank_points,
+         opp_1stperwon = l_1stperwon, opp_ace = l_ace, opp_df = l_df,
+         opp_2ndwon = l_2ndWon, opp_SvGms = l_SvGms,
+         opp_bpSaved = l_bpSaved, opp_bpFaced = l_bpFaced) %>%
+  mutate(won = 1)
 
+# Create loser rows.
+losers <- matches_filtered %>%
+  select(surface, tourney_level, minutes, best_of, round,
+         player_ht = loser_ht, player_age = loser_age, player_hand = loser_hand,
+         player_rank = loser_rank, player_rank_points = loser_rank_points,
+         player_1stperwon = l_1stperwon, player_ace = l_ace, player_df = l_df,
+         player_2ndwon = l_2ndWon, player_SvGms = l_SvGms,
+         player_bpSaved = l_bpSaved, player_bpFaced = l_bpFaced,
+         opp_ht = winner_ht, opp_age = winner_age, opp_hand = winner_hand,
+         opp_rank = winner_rank, opp_rank_points = winner_rank_points,
+         opp_1stperwon = w_1stperwon, opp_ace = w_ace, opp_df = w_df,
+         opp_2ndwon = w_2ndWon, opp_SvGms = w_SvGms,
+         opp_bpSaved = w_bpSaved, opp_bpFaced = w_bpFaced) %>%
+  mutate(won = 0)
+
+# Combine winner and loser rows.
+classification_data <- bind_rows(winners, losers)
+
+# View the restructured data.
+head(classification_data)
+cat("Number of rows:", nrow(classification_data), "\n")
 
