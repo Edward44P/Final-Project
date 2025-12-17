@@ -6,12 +6,14 @@ install.packages("dplyr")
 install.packages("corrplot")
 install.packages("ggplot2")
 install.packages("patchwork")
+install.packages("fastDummies")
 
 # Load required packages.
 library(dplyr)
 library(corrplot)
 library(ggplot2)
 library(patchwork)
+library(fastDummies)
 
 # Read the four years of match data.
 matches_2016 <- read.csv("atp_matches_2016.csv", stringsAsFactors = FALSE)
@@ -195,7 +197,26 @@ losers <- matches_filtered %>%
 # Combine winner and loser rows.
 classification_data <- bind_rows(winners, losers)
 
+# Remove all entries with an unknown dominant hand.
+classification_data <- classification_data[
+  classification_data$player_hand != "U" & classification_data$opp_hand != "U",
+]
+
+
 # View the restructured data.
 head(classification_data)
 cat("Number of rows:", nrow(classification_data), "\n")
+
+
+# Encode categorical variables as dummies.
+classification_data_encoded <- fastDummies::dummy_cols(
+  classification_data,
+  select_columns = c("surface", "tourney_level", "best_of",
+                     "round", "player_hand", "opp_hand"),
+  remove_first_dummy = TRUE,                   # Avoid multicollinearity.
+  remove_selected_columns = TRUE
+)
+
+# View encoded data.
+head(classification_data_encoded)
 
