@@ -142,3 +142,23 @@ plots <- lapply(selected_cols,
 # Plot the nine histograms in a 3x3 grid.
 wrap_plots(plots, ncol = 3)
 
+
+# General Linear Model (GLM) ##############################################
+###########################################################################
+
+
+# Create two new columns titled w_1stperwon and l_1stperwon for both datasets.
+matches <- matches %>%
+  mutate(w_1stperwon = (w_1stWon / w_1stIn) * 100)
+matches <- matches %>%
+  mutate(l_1stperwon = (l_1stWon / l_1stIn) * 100)
+head(matches)
+matches_filtered <- matches_filtered %>%
+  mutate(w_1stperwon = (w_1stWon / w_1stIn) * 100)
+matches_filtered <- matches_filtered %>%
+  mutate(l_1stperwon = (l_1stWon / l_1stIn) * 100)
+head(matches_filtered)
+
+
+
+
