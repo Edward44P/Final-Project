@@ -125,8 +125,8 @@ selected_cols <- c("l_ace", "l_df", "l_svpt", "l_1stIn",
 "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced")
 plots <- lapply(selected_cols,
                 function(col) {
-    ggplot(matches_filtered,
-           aes(x = .data[[col]])) +
+                  ggplot(matches_filtered,
+                aes(x = .data[[col]])) +
       geom_histogram(bins = 20,
                      fill = "darkblue", color = 
                        "black") +
