@@ -7,6 +7,11 @@ install.packages("corrplot")
 install.packages("ggplot2")
 install.packages("patchwork")
 install.packages("fastDummies")
+install.packages("glmnet")
+install.packages("hnp")
+install.packages("caret")
+install.packages("pROC")
+
 
 # Load required packages.
 library(dplyr)
@@ -14,6 +19,11 @@ library(corrplot)
 library(ggplot2)
 library(patchwork)
 library(fastDummies)
+library(glmnet)
+library(hnp)
+library(caret)
+library(pROC)
+
 
 # Read the four years of match data.
 matches_2016 <- read.csv("atp_matches_2016.csv", stringsAsFactors = FALSE)
@@ -145,9 +155,6 @@ plots <- lapply(selected_cols,
 wrap_plots(plots, ncol = 3)
 
 
-# General Linear Model (GLM) ##############################################
-###########################################################################
-
 
 # Create new columns 'w_1stperwon' and 'l_1stperwon' for both datasets.
 matches <- matches %>%
@@ -219,4 +226,70 @@ classification_data_encoded <- fastDummies::dummy_cols(
 
 # View encoded data.
 head(classification_data_encoded)
+
+
+
+# General Linear Model (GLM): Logistic Regression #############################
+###############################################################################
+
+
+# Shuffle dataset and split train/test 80%/20%.
+set.seed(123)
+n_obs <- nrow(classification_data_encoded)
+train_idx <- sample(seq_len(n_obs), size = floor(0.8 * n_obs))
+train_data <- classification_data_encoded[train_idx, ]
+test_data  <- classification_data_encoded[-train_idx, ]
+
+# Remove any remaining rows with NA values.
+train_data <- train_data[complete.cases(train_data), ]
+test_data  <- test_data[complete.cases(test_data), ]
+
+# Produce design matrices.
+x_train <- model.matrix(won ~ ., data = train_data)[, -1]
+y_train <- train_data$won
+x_test  <- model.matrix(won ~ ., data = test_data)[, -1]
+y_test  <- test_data$won
+
+# Establish initial logistic regression model.
+logit <- glm(won ~ ., data = train_data, family = binomial())
+summary(logit)
+
+# Visualise suitablility via half-normal plot of residuals.
+hnp(logit)
+
+# Fit a ridge-regularised logistic regression model with cross-validation.
+cv_ridge <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 0)
+ridge_model <- glmnet(x_train, y_train, family = "binomial", alpha = 0,
+                      lambda = cv_ridge$lambda.min)
+
+# Inspect cross-validated deviance for lambda that minimises error.
+print(cv_ridge$cvm[cv_ridge$lambda == cv_ridge$lambda.min])
+
+# Evaluate on test set.
+test_probabilities <- predict(ridge_model, newx = x_test, type = "response")
+test_predictions <- ifelse(test_probabilities >= 0.5, 1, 0)
+
+# Construct confusion matrix.
+conf_mat <- caret::confusionMatrix(factor(test_predictions),
+                                   factor(y_test), positive = "1")
+cat("\nConfusion Matrix:\n")
+print(conf_mat$table)
+cat("\nAccuracy:", round(conf_mat$overall["Accuracy"], 3), "\n")
+cat("Sensitivity (Recall):", round(conf_mat$byClass["Sensitivity"], 3), "\n")
+cat("Specificity:", round(conf_mat$byClass["Specificity"], 3), "\n")
+cat("Precision:", round(conf_mat$byClass["Precision"], 3), "\n")
+cat("F1 Score:", round(conf_mat$byClass["F1"], 3), "\n")
+
+# Calculate ROC and AUC.
+roc_obj <- pROC::roc(y_test, as.numeric(ridge_probs_test))
+auc_val <- pROC::auc(roc_obj)
+cat("AUC (ROC):", round(auc_val, 3), "\n")
+
+# Obtain odds ratios for interpretability.
+odds_ratios <- exp(coef(logit))
+cat("Largest positive effects (odds ratios):\n")
+print(head(sort(odds_ratios, decreasing = TRUE), 10))
+cat("Largest negative effects (odds ratios):\n")
+print(head(sort(odds_ratios, decreasing = FALSE), 10))
+
 
