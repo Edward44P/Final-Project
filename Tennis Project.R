@@ -110,6 +110,11 @@ boxplot(matches_filtered[, c("winner_ht", "winner_age", "loser_ht",
         border = "darkblue", 
         ylab = "Values")
 
+
+# Remove the two entries with incorrect 'minutes' values.
+matches_filtered <- matches_filtered[matches_filtered$minutes <= 500, ]
+
+
 # Produce a heatmap of variables' correlation.
 cor_matrix <- cor(matches_filtered[, 
     c("winner_ht", "winner_age", "minutes", "w_ace", 
