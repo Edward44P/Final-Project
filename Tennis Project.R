@@ -305,6 +305,48 @@ print(head(sort(odds_ratios_logit, decreasing = FALSE), 10))
 
 
 
+# RIDGE REGULARISED LOGISTIC REGRESSION #################
+#########################################################
+
+
+# Fit ridge-regularised logistic regression model.
+cv_ridge <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 0)
+ridge_model <- glmnet(x_train, y_train, family = "binomial", alpha = 0,
+                      lambda = cv_ridge$lambda.min)
+
+# Obtain cross-validated deviance for lambda.
+cat("Cross-validated deviance at optimal lambda:\n")
+print(cv_ridge$cvm[cv_ridge$lambda == cv_ridge$lambda.min])
+cat("Optimal lambda:", cv_ridge$lambda.min, "\n")
+
+# Evaluate ridge on test set.
+ridge_probs_test <- predict(ridge_model, newx = x_test, type = "response")
+ridge_preds_test <- ifelse(ridge_probs_test >= 0.5, "Yes", "No")
+
+# Construct confusion matrix and gather performance metrics.
+conf_mat_ridge <- caret::confusionMatrix(factor(ridge_preds_test,
+                                         levels = c("No", "Yes")),
+                                         factor(y_test), positive = "Yes")
+cat("\nRidge Logistic Regression - Test Set Performance\n")
+print(conf_mat_ridge$table)
+cat("Accuracy:", round(conf_mat_ridge$overall["Accuracy"], 3), "\n")
+cat("Sensitivity (Recall):", 
+    round(conf_mat_ridge$byClass["Sensitivity"], 3), "\n")
+cat("Specificity:", round(conf_mat_ridge$byClass["Specificity"], 3), "\n")
+cat("Precision:", round(conf_mat_ridge$byClass["Precision"], 3), "\n")
+cat("F1 Score:", round(conf_mat_ridge$byClass["F1"], 3), "\n")
+
+# ROC AUC for ridge.
+roc_ridge <- pROC::roc(y_test, as.numeric(ridge_probs_test))
+auc_ridge <- pROC::auc(roc_ridge)
+cat("AUC (ROC):", round(auc_ridge, 3), "\n")
+
+# Odds ratios for ridge.
+odds_ratios_ridge <- exp(coef(ridge_model)[, 1])
+cat("\nLargest positive effects:\n")
+print(head(sort(odds_ratios_ridge, decreasing = TRUE), 10))
+cat("Largest negative effects:\n")
+print(head(sort(odds_ratios_ridge, decreasing = FALSE), 10))
 
 
 
