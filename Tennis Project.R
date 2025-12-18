@@ -435,9 +435,11 @@ auc_rf <- pROC::auc(roc_rf)
 cat("AUC and ROC:", round(auc_rf, 3), "\n")
 
 # Feature importance.
-cat("\nRandom Forest - Feature Importance (Top 15)\n")
+cat("\nRandom Forest - Feature Importance\n")
 feature_importance <- varImp(rf_model, scale = FALSE)
-print(head(feature_importance$importance, 15))
+importance_df <- feature_importance$importance
+top_features <- importance_df[order(-importance_df[, 1]), , drop = FALSE]
+print(head(top_features, 15))
 
 
 
