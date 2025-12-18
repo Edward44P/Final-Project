@@ -296,7 +296,7 @@ cat("F1 Score:", round(conf_mat_logit$byClass["F1"], 3), "\n")
 # ROC AUC for logistic regression.
 roc_logit <- pROC::roc(y_test, logit_probs_test)
 auc_logit <- pROC::auc(roc_logit)
-cat("AUC (ROC):", round(auc_logit, 3), "\n")
+cat("AUC and ROC:", round(auc_logit, 3), "\n")
 
 # Odds ratios for logistic regression.
 odds_ratios_logit <- exp(coef(logit$finalModel))
@@ -317,7 +317,7 @@ lasso_model <- glmnet(x_train, y_train, family = "binomial", alpha = 1,
                       lambda = cv_lasso$lambda.min)
 
 # Obtain cross-validated deviance for lambda.
-cat("Cross-validated deviance at optimal lambda:\n")
+cat("Cross-validated deviance:\n")
 print(cv_lasso$cvm[cv_lasso$lambda == cv_lasso$lambda.min])
 cat("Optimal lambda:", cv_lasso$lambda.min, "\n")
 
@@ -360,7 +360,7 @@ ridge_model <- glmnet(x_train, y_train, family = "binomial", alpha = 0,
                       lambda = cv_ridge$lambda.min)
 
 # Obtain cross-validated deviance for lambda.
-cat("Cross-validated deviance at optimal lambda:\n")
+cat("Cross-validated deviance:\n")
 print(cv_ridge$cvm[cv_ridge$lambda == cv_ridge$lambda.min])
 cat("Optimal lambda:", cv_ridge$lambda.min, "\n")
 
