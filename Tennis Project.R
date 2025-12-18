@@ -11,7 +11,7 @@ install.packages("glmnet")
 install.packages("hnp")
 install.packages("caret")
 install.packages("pROC")
-
+install.packages("randomForest")
 
 # Load required packages.
 library(dplyr)
@@ -23,6 +23,7 @@ library(glmnet)
 library(hnp)
 library(caret)
 library(pROC)
+library(randomForest)
 
 
 # Read the four years of match data.
@@ -380,6 +381,65 @@ cat("F1 Score:", round(conf_mat_ridge$byClass["F1"], 3), "\n")
 roc_ridge <- pROC::roc(y_test, as.numeric(ridge_probs_test))
 auc_ridge <- pROC::auc(roc_ridge)
 cat("AUC and ROC:", round(auc_ridge, 3), "\n")
+
+
+
+
+# Random Forest ################################################################
+################################################################################
+
+
+# Create tuning grid for several values of mtry.
+num_predictors <- ncol(x_train)
+mtry_values <- c(floor(sqrt(num_predictors)), 
+                 floor(num_predictors / 3), 
+                 floor(num_predictors / 2))
+
+tune_grid <- expand.grid(mtry = mtry_values)
+
+# Fit a random forest using cross validation on mtry parameter.
+rf_model <- caret::train(won ~ .,
+                         data = train_data,
+                         method = "rf",
+                         trControl = ctrl,
+                         tuneGrid = tune_grid,
+                         metric = "ROC",
+                         ntree = 500,
+                         importance = TRUE)
+
+# Display model summary and best mtry.
+cat("Random Forest Model\n")
+print(rf_model)
+cat("Best mtry:", rf_model$bestTune$mtry, "\n")
+
+# Evaluate model on test set.
+rf_probs_test <- predict(rf_model, newdata = test_data, type = "prob")[, "Yes"]
+rf_preds_test <- ifelse(rf_probs_test >= 0.5, "Yes", "No")
+
+# Construct confusion matrix and display same performance metrics.
+conf_mat_rf <- caret::confusionMatrix(factor(rf_preds_test,
+                                      levels = c("No", "Yes")),
+                                      factor(y_test), positive = "Yes")
+cat("\nRandom Forest - Test Set\n")
+print(conf_mat_rf$table)
+cat("Accuracy:", round(conf_mat_rf$overall["Accuracy"], 3), "\n")
+cat("Sensitivity:", 
+    round(conf_mat_rf$byClass["Sensitivity"], 3), "\n")
+cat("Specificity:", round(conf_mat_rf$byClass["Specificity"], 3), "\n")
+cat("Precision:", round(conf_mat_rf$byClass["Precision"], 3), "\n")
+cat("F1 Score:", round(conf_mat_rf$byClass["F1"], 3), "\n")
+
+# ROC and AUC.
+roc_rf <- pROC::roc(y_test, rf_probs_test)
+auc_rf <- pROC::auc(roc_rf)
+cat("AUC and ROC:", round(auc_rf, 3), "\n")
+
+# Feature importance.
+cat("\nRandom Forest - Feature Importance (Top 15)\n")
+feature_importance <- varImp(rf_model, scale = FALSE)
+print(head(feature_importance$importance, 15))
+
+
 
 
 
