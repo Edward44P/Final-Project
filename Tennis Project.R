@@ -172,7 +172,7 @@ head(matches_filtered)
 # Restructure dataset for classification modelling.
 # Create winner rows.
 winners <- matches_filtered %>%
-  select(surface, tourney_level, minutes, best_of, round,
+  dplyr::select(surface, tourney_level, minutes, best_of, round,
          player_ht = winner_ht, player_age = winner_age,
          player_hand = winner_hand,
          player_rank = winner_rank, player_rank_points = winner_rank_points,
@@ -188,7 +188,7 @@ winners <- matches_filtered %>%
 
 # Create loser rows.
 losers <- matches_filtered %>%
-  select(surface, tourney_level, minutes, best_of, round,
+  dplyr::select(surface, tourney_level, minutes, best_of, round,
          player_ht = loser_ht, player_age = loser_age, player_hand = loser_hand,
          player_rank = loser_rank, player_rank_points = loser_rank_points,
          player_1stperwon = l_1stperwon, player_ace = l_ace, player_df = l_df,
@@ -245,8 +245,10 @@ train_data <- train_data[complete.cases(train_data), ]
 test_data  <- test_data[complete.cases(test_data), ]
 
 # Convert our outcome variable to factor and relabel levels.
-train_data$won <- factor(train_data$won, levels = c(0, 1), labels = c("No", "Yes"))
-test_data$won <- factor(test_data$won, levels = c(0, 1), labels = c("No", "Yes"))
+train_data$won <- factor(train_data$won,
+                         levels = c(0, 1), labels = c("No", "Yes"))
+test_data$won <- factor(test_data$won,
+                        levels = c(0, 1), labels = c("No", "Yes"))
 
 # Produce design matrices.
 x_train <- model.matrix(won ~ ., data = train_data)[, -1]
@@ -260,11 +262,11 @@ ctrl <- caret::trainControl(method = "cv", number = 5, classProbs = TRUE,
 
 # Fit logistic regression model.
 logit <- caret::train(won ~ .,
-                         data = train_data,
-                         method = "glm",
-                         family = binomial(),
-                         trControl = ctrl,
-                         metric = "ROC")
+                      data = train_data,
+                      method = "glm",
+                      family = binomial(),
+                      trControl = ctrl,
+                      metric = "ROC")
 
 # Display model summary.
 cat("Logistic Regression: 5-fold CV\n")
@@ -303,10 +305,51 @@ print(head(sort(odds_ratios_logit, decreasing = TRUE), 10))
 cat("Largest negative effects:\n")
 print(head(sort(odds_ratios_logit, decreasing = FALSE), 10))
 
+# Lasso Logistic Regression ################################################
+############################################################################
 
 
-# RIDGE REGULARISED LOGISTIC REGRESSION #################
-#########################################################
+# Fit lasso logistic regression model.
+cv_lasso <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 1)
+lasso_model <- glmnet(x_train, y_train, family = "binomial", alpha = 1,
+                      lambda = cv_lasso$lambda.min)
+
+# Obtain cross-validated deviance for lambda.
+cat("Cross-validated deviance at optimal lambda:\n")
+print(cv_lasso$cvm[cv_lasso$lambda == cv_lasso$lambda.min])
+cat("Optimal lambda:", cv_lasso$lambda.min, "\n")
+
+# Evaluate lasso on test set.
+lasso_probs_test <- predict(lasso_model, newx = x_test, type = "response")
+lasso_preds_test <- ifelse(lasso_probs_test >= 0.5, "Yes", "No")
+# Construct confusion matrix and gather performance metrics.
+conf_mat_lasso <- caret::confusionMatrix(factor(lasso_preds_test,
+                                         levels = c("No", "Yes")),
+                                         factor(y_test), positive = "Yes")
+cat("\nLasso Logistic Regression - Test Set Performance\n")
+print(conf_mat_lasso$table)
+cat("Accuracy:", round(conf_mat_lasso$overall["Accuracy"], 3), "\n")
+cat("Sensitivity (Recall):", 
+    round(conf_mat_lasso$byClass["Sensitivity"], 3), "\n")
+cat("Specificity:", round(conf_mat_lasso$byClass["Specificity"], 3), "\n")
+cat("Precision:", round(conf_mat_lasso$byClass["Precision"], 3), "\n")
+cat("F1 Score:", round(conf_mat_lasso$byClass["F1"], 3), "\n")
+
+# ROC and AUC for lasso.
+roc_lasso <- pROC::roc(y_test, as.numeric(lasso_probs_test))
+auc_lasso <- pROC::auc(roc_lasso)
+cat("AUC and ROC:", round(auc_lasso, 3), "\n")
+
+# Odds ratios for lasso.
+odds_ratios_lasso <- exp(coef(lasso_model)[, 1])
+cat("\nLargest positive effects:\n")
+print(head(sort(odds_ratios_lasso, decreasing = TRUE), 10))
+cat("Largest negative effects:\n")
+print(head(sort(odds_ratios_lasso, decreasing = FALSE), 10))
+
+
+# Ridge Regularised Logistic Regression ####################################
+############################################################################
 
 
 # Fit ridge-regularised logistic regression model.
@@ -336,10 +379,10 @@ cat("Specificity:", round(conf_mat_ridge$byClass["Specificity"], 3), "\n")
 cat("Precision:", round(conf_mat_ridge$byClass["Precision"], 3), "\n")
 cat("F1 Score:", round(conf_mat_ridge$byClass["F1"], 3), "\n")
 
-# ROC AUC for ridge.
+# ROC and AUC for ridge.
 roc_ridge <- pROC::roc(y_test, as.numeric(ridge_probs_test))
 auc_ridge <- pROC::auc(roc_ridge)
-cat("AUC (ROC):", round(auc_ridge, 3), "\n")
+cat("AUC and ROC:", round(auc_ridge, 3), "\n")
 
 # Odds ratios for ridge.
 odds_ratios_ridge <- exp(coef(ridge_model)[, 1])
