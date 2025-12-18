@@ -342,12 +342,7 @@ roc_lasso <- pROC::roc(y_test, as.numeric(lasso_probs_test))
 auc_lasso <- pROC::auc(roc_lasso)
 cat("AUC and ROC:", round(auc_lasso, 3), "\n")
 
-# Odds ratios for lasso.
-odds_ratios_lasso <- exp(coef(lasso_model)[, 1])
-cat("\nLargest positive effects:\n")
-print(head(sort(odds_ratios_lasso, decreasing = TRUE), 10))
-cat("Largest negative effects:\n")
-print(head(sort(odds_ratios_lasso, decreasing = FALSE), 10))
+
 
 
 # Ridge Regularised Logistic Regression ####################################
@@ -386,12 +381,7 @@ roc_ridge <- pROC::roc(y_test, as.numeric(ridge_probs_test))
 auc_ridge <- pROC::auc(roc_ridge)
 cat("AUC and ROC:", round(auc_ridge, 3), "\n")
 
-# Odds ratios for ridge.
-odds_ratios_ridge <- exp(coef(ridge_model)[, 1])
-cat("\nLargest positive effects:\n")
-print(head(sort(odds_ratios_ridge, decreasing = TRUE), 10))
-cat("Largest negative effects:\n")
-print(head(sort(odds_ratios_ridge, decreasing = FALSE), 10))
+
 
 
 
