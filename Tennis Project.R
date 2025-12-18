@@ -244,52 +244,69 @@ test_data  <- classification_data_encoded[-train_idx, ]
 train_data <- train_data[complete.cases(train_data), ]
 test_data  <- test_data[complete.cases(test_data), ]
 
+# Convert our outcome variable to factor and relabel levels.
+train_data$won <- factor(train_data$won, levels = c(0, 1), labels = c("No", "Yes"))
+test_data$won <- factor(test_data$won, levels = c(0, 1), labels = c("No", "Yes"))
+
 # Produce design matrices.
 x_train <- model.matrix(won ~ ., data = train_data)[, -1]
 y_train <- train_data$won
 x_test  <- model.matrix(won ~ ., data = test_data)[, -1]
 y_test  <- test_data$won
 
-# Establish initial logistic regression model.
-logit <- glm(won ~ ., data = train_data, family = binomial())
-summary(logit)
+# Select 5 folds for cross-validation.
+ctrl <- caret::trainControl(method = "cv", number = 5, classProbs = TRUE,
+                            summaryFunction = caret::twoClassSummary)
 
-# Visualise suitablility via half-normal plot of residuals.
-hnp(logit)
+# Fit logistic regression model.
+logit <- caret::train(won ~ .,
+                         data = train_data,
+                         method = "glm",
+                         family = binomial(),
+                         trControl = ctrl,
+                         metric = "ROC")
 
-# Fit a ridge-regularised logistic regression model with cross-validation.
-cv_ridge <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 0)
-ridge_model <- glmnet(x_train, y_train, family = "binomial", alpha = 0,
-                      lambda = cv_ridge$lambda.min)
+# Display model summary.
+cat("Logistic Regression: 5-fold CV\n")
+print(summary(logit$finalModel))
 
-# Inspect cross-validated deviance for lambda that minimises error.
-print(cv_ridge$cvm[cv_ridge$lambda == cv_ridge$lambda.min])
+# Visualise suitability via half-normal plot of residuals.
+cat("\nLogistic Regression - Half-Normal Plot:\n")
+hnp(logit$finalModel)
 
-# Evaluate on test set.
-test_probabilities <- predict(ridge_model, newx = x_test, type = "response")
-test_predictions <- ifelse(test_probabilities >= 0.5, 1, 0)
+# Evaluate model on test set.
+logit_probs_test <- predict(logit, newdata = test_data, type = "prob")[, "Yes"]
+logit_preds_test <- ifelse(logit_probs_test >= 0.5, "Yes", "No")
 
-# Construct confusion matrix.
-conf_mat <- caret::confusionMatrix(factor(test_predictions),
-                                   factor(y_test), positive = "1")
-cat("\nConfusion Matrix:\n")
-print(conf_mat$table)
-cat("\nAccuracy:", round(conf_mat$overall["Accuracy"], 3), "\n")
-cat("Sensitivity (Recall):", round(conf_mat$byClass["Sensitivity"], 3), "\n")
-cat("Specificity:", round(conf_mat$byClass["Specificity"], 3), "\n")
-cat("Precision:", round(conf_mat$byClass["Precision"], 3), "\n")
-cat("F1 Score:", round(conf_mat$byClass["F1"], 3), "\n")
+# Construct confusion matrix and gather performance metrics.
+conf_mat_logit <- caret::confusionMatrix(factor(logit_preds_test,
+                                         levels = c("No", "Yes")),
+                                         factor(y_test), positive = "Yes")
+cat("\nLogistic Regression - Test Set Performance\n")
+print(conf_mat_logit$table)
+cat("Accuracy:", round(conf_mat_logit$overall["Accuracy"], 3), "\n")
+cat("Sensitivity (Recall):", 
+    round(conf_mat_logit$byClass["Sensitivity"], 3), "\n")
+cat("Specificity:", round(conf_mat_logit$byClass["Specificity"], 3), "\n")
+cat("Precision:", round(conf_mat_logit$byClass["Precision"], 3), "\n")
+cat("F1 Score:", round(conf_mat_logit$byClass["F1"], 3), "\n")
 
-# Calculate ROC and AUC.
-roc_obj <- pROC::roc(y_test, as.numeric(ridge_probs_test))
-auc_val <- pROC::auc(roc_obj)
-cat("AUC (ROC):", round(auc_val, 3), "\n")
+# ROC AUC for logistic regression.
+roc_logit <- pROC::roc(y_test, logit_probs_test)
+auc_logit <- pROC::auc(roc_logit)
+cat("AUC (ROC):", round(auc_logit, 3), "\n")
 
-# Obtain odds ratios for interpretability.
-odds_ratios <- exp(coef(logit))
-cat("Largest positive effects (odds ratios):\n")
-print(head(sort(odds_ratios, decreasing = TRUE), 10))
-cat("Largest negative effects (odds ratios):\n")
-print(head(sort(odds_ratios, decreasing = FALSE), 10))
+# Odds ratios for logistic regression.
+odds_ratios_logit <- exp(coef(logit$finalModel))
+cat("\nLargest positive effects:\n")
+print(head(sort(odds_ratios_logit, decreasing = TRUE), 10))
+cat("Largest negative effects:\n")
+print(head(sort(odds_ratios_logit, decreasing = FALSE), 10))
+
+
+
+
+
+
 
 
