@@ -13,6 +13,7 @@ install.packages("caret")
 install.packages("pROC")
 install.packages("randomForest")
 
+
 # Load required packages.
 library(dplyr)
 library(corrplot)
@@ -443,6 +444,54 @@ print(head(top_features, 15))
 
 
 
+
+# Neural Network ###############################################################
+################################################################################
+
+# Set seed for reproducibility.
+set.seed(123)
+
+# Create tuning grid for number of neurons (size) and L2 regularisation (decay).
+nn_grid <- expand.grid(size = c(3, 6, 10), decay = c(0, 1e-4, 1e-3))
+
+# Fit neural network with same 5-fold CV on tuning parameters.
+nn_model <- caret::train(
+  won ~ .,
+  data = train_data,
+  method = "nnet",
+  trControl = ctrl,
+  tuneGrid = nn_grid,
+  metric = "ROC",
+  preProcess = c("center", "scale"),
+  maxit = 200,
+  trace = FALSE
+)
+
+# Display best tune.
+cat("Neural Network - Best Tune:\n")
+print(nn_model$bestTune)
+
+# Evaluate neural network on test set.
+nn_probs_test <- predict(nn_model, newdata = test_data, type = "prob")[, "Yes"]
+nn_preds_test <- ifelse(nn_probs_test >= 0.5, "Yes", "No")
+
+# Construct confusion matrix and display performance metrics.
+conf_mat_nn <- caret::confusionMatrix(
+  factor(nn_preds_test, levels = c("No", "Yes")),
+  factor(y_test), positive = "Yes"
+)
+cat("\nNeural Network - Test Results\n")
+print(conf_mat_nn$table)
+cat("Accuracy:", round(conf_mat_nn$overall["Accuracy"], 3), "\n")
+cat("Sensitivity:", round(conf_mat_nn$byClass["Sensitivity"], 3), "\n")
+cat("Specificity:", round(conf_mat_nn$byClass["Specificity"], 3), "\n")
+cat("Precision:", round(conf_mat_nn$byClass["Precision"], 3), "\n")
+cat("F1 Score:", round(conf_mat_nn$byClass["F1"], 3), "\n")
+
+# ROC and AUC.
+roc_nn <- pROC::roc(y_test, nn_probs_test)
+auc_nn <- pROC::auc(roc_nn)
+cat("AUC and ROC:", round(auc_nn, 3), "\n")
 
 
 
