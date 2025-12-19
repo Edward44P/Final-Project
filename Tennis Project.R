@@ -295,12 +295,12 @@ cat("Specificity:", round(conf_mat_logit$byClass["Specificity"], 3), "\n")
 cat("Precision:", round(conf_mat_logit$byClass["Precision"], 3), "\n")
 cat("F1 Score:", round(conf_mat_logit$byClass["F1"], 3), "\n")
 
-# ROC AUC for logistic regression.
+# Calculate and display ROC and AUC.
 roc_logit <- pROC::roc(y_test, logit_probs_test)
 auc_logit <- pROC::auc(roc_logit)
 cat("AUC and ROC:", round(auc_logit, 3), "\n")
 
-# Odds ratios for logistic regression.
+# Display odds ratios.
 odds_ratios_logit <- exp(coef(logit$finalModel))
 cat("\nLargest positive effects:\n")
 print(head(sort(odds_ratios_logit, decreasing = TRUE), 10))
@@ -326,11 +326,12 @@ cat("Optimal lambda:", cv_lasso$lambda.min, "\n")
 # Evaluate lasso on test set.
 lasso_probs_test <- predict(lasso_model, newx = x_test, type = "response")
 lasso_preds_test <- ifelse(lasso_probs_test >= 0.5, "Yes", "No")
-# Construct confusion matrix and gather performance metrics.
+
+# Construct confusion matrix and display performance metrics.
 conf_mat_lasso <- caret::confusionMatrix(factor(lasso_preds_test,
                                          levels = c("No", "Yes")),
                                          factor(y_test), positive = "Yes")
-cat("\nLasso Logistic Regression - Test Set Performance\n")
+cat("\nLasso Logistic Regression - Test Results\n")
 print(conf_mat_lasso$table)
 cat("Accuracy:", round(conf_mat_lasso$overall["Accuracy"], 3), "\n")
 cat("Sensitivity (Recall):", 
@@ -339,7 +340,7 @@ cat("Specificity:", round(conf_mat_lasso$byClass["Specificity"], 3), "\n")
 cat("Precision:", round(conf_mat_lasso$byClass["Precision"], 3), "\n")
 cat("F1 Score:", round(conf_mat_lasso$byClass["F1"], 3), "\n")
 
-# ROC and AUC for lasso.
+# Calculate and display ROC and AUC.
 roc_lasso <- pROC::roc(y_test, as.numeric(lasso_probs_test))
 auc_lasso <- pROC::auc(roc_lasso)
 cat("AUC and ROC:", round(auc_lasso, 3), "\n")
@@ -378,7 +379,7 @@ cat("Specificity:", round(conf_mat_ridge$byClass["Specificity"], 3), "\n")
 cat("Precision:", round(conf_mat_ridge$byClass["Precision"], 3), "\n")
 cat("F1 Score:", round(conf_mat_ridge$byClass["F1"], 3), "\n")
 
-# ROC and AUC for ridge.
+# Calculate and display ROC and AUC.
 roc_ridge <- pROC::roc(y_test, as.numeric(ridge_probs_test))
 auc_ridge <- pROC::auc(roc_ridge)
 cat("AUC and ROC:", round(auc_ridge, 3), "\n")
@@ -430,12 +431,12 @@ cat("Specificity:", round(conf_mat_rf$byClass["Specificity"], 3), "\n")
 cat("Precision:", round(conf_mat_rf$byClass["Precision"], 3), "\n")
 cat("F1 Score:", round(conf_mat_rf$byClass["F1"], 3), "\n")
 
-# ROC and AUC.
+# Calculate and display ROC and AUC.
 roc_rf <- pROC::roc(y_test, rf_probs_test)
 auc_rf <- pROC::auc(roc_rf)
 cat("AUC and ROC:", round(auc_rf, 3), "\n")
 
-# Feature importance.
+# Display Feature importance.
 cat("\nRandom Forest - Feature Importance\n")
 feature_importance <- varImp(rf_model, scale = FALSE)
 importance_df <- feature_importance$importance
@@ -488,13 +489,7 @@ cat("Specificity:", round(conf_mat_nn$byClass["Specificity"], 3), "\n")
 cat("Precision:", round(conf_mat_nn$byClass["Precision"], 3), "\n")
 cat("F1 Score:", round(conf_mat_nn$byClass["F1"], 3), "\n")
 
-# ROC and AUC.
+# Calculate and display ROC and AUC.
 roc_nn <- pROC::roc(y_test, nn_probs_test)
 auc_nn <- pROC::auc(roc_nn)
 cat("AUC and ROC:", round(auc_nn, 3), "\n")
-
-
-
-
-
-
