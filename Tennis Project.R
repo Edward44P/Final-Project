@@ -391,7 +391,7 @@ cat("AUC and ROC:", round(auc_ridge, 3), "\n")
 ################################################################################
 
 
-# Create tuning grid for several values of mtry.
+# Create tuning grid for several values of mtry (number of predictors).
 num_predictors <- ncol(x_train)
 mtry_values <- c(floor(sqrt(num_predictors)), 
                  floor(num_predictors / 3), 
