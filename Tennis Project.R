@@ -452,7 +452,7 @@ print(head(top_features, 15))
 # Set seed for reproducibility.
 set.seed(123)
 
-# Create tuning grid for number of neurons (size) and L2 regularisation (decay).
+# Create tuning grid for number of neurons (size) and L2 regularisation (decay strength).
 nn_grid <- expand.grid(size = c(3, 6, 10), decay = c(0, 1e-4, 1e-3))
 
 # Fit neural network with same 5-fold CV on tuning parameters.
